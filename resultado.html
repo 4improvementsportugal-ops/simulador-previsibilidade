@@ -1020,13 +1020,26 @@ if ($('#confirm-session-btn')) $('#confirm-session-btn').addEventListener('click
   const btn = $('#confirm-session-btn');
   btn.disabled = true;
   btn.textContent = 'A confirmar…';
+
+  const sessaoData = selectedDate.toISOString().slice(0,10);
   const payload = Object.assign({}, formData, {
     score: maturityScore,
     cluster: cluster,
-    sessao_data: selectedDate.toISOString().slice(0,10),
+    sessao_data: sessaoData,
     sessao_hora: selectedSlot,
     event_type: 'session_booked'
   });
+
+  // 1) Atualiza sessionStorage para a página de obrigado ler
+  try {
+    const existing = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '{}');
+    existing.sessao_data = sessaoData;
+    existing.sessao_hora = selectedSlot;
+    existing.sessao_booked_at = new Date().toISOString();
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+  } catch(e){}
+
+  // 2) Webhook para o GHL (keepalive sobrevive ao redirect)
   if (WEBHOOK_URL && !WEBHOOK_URL.includes('[WEBHOOK')){
     fetch(WEBHOOK_URL, {
       method: 'POST',
@@ -1037,10 +1050,22 @@ if ($('#confirm-session-btn')) $('#confirm-session-btn').addEventListener('click
   } else {
     console.log('[4improvements] Sessão pré-agendada:', payload);
   }
-  setTimeout(() => {
-    btn.textContent = '✓ Sessão pré-agendada';
-    btn.style.background = 'var(--success)';
-  }, 800);
+
+  // 3) Eventos Meta + GA — Schedule é a conversão certa para uma marcação
+  try {
+    if (typeof fbq === 'function'){
+      fbq('track', 'Schedule', {
+        content_name: 'Sessão Estratégica 4 Improvements',
+        content_category: cluster,
+        value: maturityScore,
+        currency: 'EUR'
+      });
+    }
+  } catch(e){}
+  try { if (typeof gtag === 'function') gtag('event', 'schedule', { event_category: 'simulator', cluster: cluster }); } catch(e){}
+
+  // 4) Redirect para obrigado.html (delay para os pixels enviarem)
+  setTimeout(() => { window.location.href = 'obrigado.html'; }, 900);
 });
 
 // ========== 6) VSL Gating — YouTube IFrame Player API ==========

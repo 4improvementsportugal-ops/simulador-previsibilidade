@@ -5,7 +5,8 @@ Funil de 5 perguntas + diagnóstico por cluster de maturidade comercial, desenha
 ## Estrutura
 
 - **`index.html`** — Hero + funil (5 perguntas + 3 passos de contacto). No submit: guarda em `sessionStorage`, envia webhook, dispara `Lead` no pixel, redireciona para `resultado.html`.
-- **`resultado.html`** — Lê `sessionStorage`, renderiza diagnóstico personalizado por cluster + perfil + foco. VSL gating: vídeo do Pedro Ferreira (Google Drive) destranca diagnóstico + calendário ao terminar.
+- **`resultado.html`** — Lê `sessionStorage`, renderiza diagnóstico personalizado por cluster + perfil + foco. VSL gating: vídeo do Pedro Ferreira (YouTube) destranca diagnóstico + calendário ao terminar. Ao confirmar sessão: dispara `Schedule` no pixel + webhook + redireciona para `obrigado.html`.
+- **`obrigado.html`** — Página de confirmação após o utilizador marcar a sessão. Mostra detalhes da marcação (data + hora), próximos passos, botão para adicionar ao Google Calendar e CTA WhatsApp. Dispara `CompleteRegistration` no pixel. Se alguém entrar direto sem ter marcado, redireciona para `index.html`.
 
 ## Deploy (GitHub Pages)
 
