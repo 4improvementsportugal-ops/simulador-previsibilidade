@@ -979,9 +979,23 @@ if ($('#confirm-session-btn')) $('#confirm-session-btn').addEventListener('click
   }, 800);
 });
 
-// ========== 6) VSL Gating ==========
-const VSL_DURATION_SECONDS = 90; // duração estimada do vídeo do Pedro Ferreira (ajustar à duração real)
+// ========== 6) VSL Gating — YouTube IFrame Player API ==========
+// O gating desbloqueia no evento ENDED (i.e. quando o vídeo termina mesmo).
+// Há um teto de segurança de 10 min caso a API falhe (adblockers, etc).
+const YT_VIDEO_ID = 'Y7diCaqebrY'; // VSL Pedro Ferreira — canal 4Improvements
+const FALLBACK_MAX_MS = 10 * 60 * 1000;
 let vslStarted = false;
+let ytPlayer = null;
+let ytApiReady = false;
+
+// Carrega a YouTube IFrame API ao montar a página
+(function loadYouTubeAPI(){
+  if (window.YT && window.YT.Player){ ytApiReady = true; return; }
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+window.onYouTubeIframeAPIReady = function(){ ytApiReady = true; };
 
 function startVSL(){
   if (vslStarted) return;
@@ -989,32 +1003,71 @@ function startVSL(){
   const v = $('#videoPlaceholder');
   v.classList.add('playing');
 
-  // ─── EMBED GOOGLE DRIVE ─────────────────────────────────────────
-  // Substituir 17tmkYdQE89f001Pv1bMFJaBf5AiwYNgT pelo ID do ficheiro do vídeo do Pedro Ferreira.
-  // Como obter: abra o vídeo no Drive → Partilhar → "Qualquer pessoa com o
-  // link pode ver" → Copie o link. Formato: https://drive.google.com/file/d/ABC123XYZ/view
-  // O FILE_ID é a parte ABC123XYZ entre /d/ e /view
+  // Cria o div onde o YT.Player vai injetar o iframe
   v.insertAdjacentHTML('afterbegin',
-    '<iframe src="https://drive.google.com/file/d/17tmkYdQE89f001Pv1bMFJaBf5AiwYNgT/preview" allow="autoplay; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;z-index:1"></iframe>'
+    '<div id="ytPlayer" style="position:absolute;inset:0;width:100%;height:100%;z-index:1"></div>'
   );
 
-  const total = VSL_DURATION_SECONDS * 1000;
-  const step = 200;
-  let elapsed = 0;
-  const timeEl = $('#vslTime');
-  const tick = setInterval(() => {
-    elapsed += step;
-    const pct = Math.min(100, (elapsed / total) * 100);
-    v.style.setProperty('--vsl-pct', pct + '%');
-    const remaining = Math.max(0, total - elapsed);
-    const mins = Math.floor(remaining / 60000);
-    const secs = Math.floor((remaining % 60000) / 1000);
-    if (timeEl) timeEl.textContent = mins + ':' + String(secs).padStart(2, '0');
-    if (elapsed >= total){
-      clearInterval(tick);
-      unlockContent();
+  // Espera pela API e inicializa
+  (function tryInit(){
+    if (ytApiReady && window.YT && window.YT.Player){
+      initYtPlayer();
+    } else {
+      setTimeout(tryInit, 100);
     }
-  }, step);
+  })();
+
+  // Safety fallback — se ENDED nunca disparar, desbloqueia ao fim de 10 min
+  setTimeout(function(){ if (!isUnlocked()) unlockContent(); }, FALLBACK_MAX_MS);
+}
+
+function initYtPlayer(){
+  ytPlayer = new YT.Player('ytPlayer', {
+    videoId: YT_VIDEO_ID,
+    playerVars: {
+      autoplay: 1,        // autoplay com som (clique do utilizador conta como interação)
+      controls: 1,        // controlos do YouTube (pausar, volume, fullscreen)
+      rel: 0,             // sem vídeos relacionados no fim
+      modestbranding: 1,  // logo YouTube mínimo
+      playsinline: 1,     // crítico para iOS — não força fullscreen
+      fs: 1,              // permite fullscreen
+      iv_load_policy: 3   // esconde annotations
+    },
+    events: {
+      onReady: function(e){
+        try { e.target.playVideo(); } catch(err){}
+        startProgressLoop();
+      },
+      onStateChange: function(e){
+        if (e.data === YT.PlayerState.ENDED){
+          unlockContent();
+        }
+      }
+    }
+  });
+}
+
+function startProgressLoop(){
+  const v = $('#videoPlaceholder');
+  const timeEl = $('#vslTime');
+  const tick = setInterval(function(){
+    if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+    let cur = 0, dur = 0;
+    try { cur = ytPlayer.getCurrentTime() || 0; dur = ytPlayer.getDuration() || 0; } catch(err){}
+    if (!dur) return;
+    const pct = Math.min(100, (cur / dur) * 100);
+    v.style.setProperty('--vsl-pct', pct + '%');
+    const remaining = Math.max(0, dur - cur);
+    const mins = Math.floor(remaining / 60);
+    const secs = Math.floor(remaining % 60);
+    if (timeEl) timeEl.textContent = mins + ':' + String(secs).padStart(2,'0');
+    if (isUnlocked()) clearInterval(tick);
+  }, 500);
+}
+
+function isUnlocked(){
+  const diag = $('#diag-locked-wrap');
+  return !!(diag && diag.classList.contains('unlocked'));
 }
 
 function unlockContent(){

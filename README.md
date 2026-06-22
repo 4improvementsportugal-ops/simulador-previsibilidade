@@ -28,8 +28,9 @@ git push -u origin main
 
 ## Configurações importantes
 
-- **Vídeo VSL** — file ID do Google Drive: `17tmkYdQE89f001Pv1bMFJaBf5AiwYNgT` (já configurado). O ficheiro tem de estar partilhado como *"Qualquer pessoa com o link pode visualizar"*.
-- **Duração do gating** — `VSL_DURATION_SECONDS = 90` em `resultado.html`. Ajustar à duração real do vídeo do Pedro Ferreira.
+- **Vídeo VSL** — YouTube ID: `Y7diCaqebrY` (canal **4Improvements**, já configurado). Embed via **YouTube IFrame Player API** com autoplay ao clicar.
+- **Gating** — desbloqueia no evento `ENDED` do player (i.e. quando o vídeo termina mesmo). Fallback de segurança de 10 min caso a API falhe (adblockers).
+- **Progresso & countdown** — sincronizados em tempo real com o player do YouTube (`getCurrentTime()` / `getDuration()`).
 - **WhatsApp/Telefone** — `+351 963 934 488` (já configurado nos dois ficheiros).
 
 ## Sistema de scoring
