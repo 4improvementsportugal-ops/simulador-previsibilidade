@@ -903,15 +903,15 @@ function submitForm(){
   };
   enviarWebhook(payload);
 
-  // 3) Pixel Lead — uma única vez aqui, NÃO no resultado.html
-  var eventId = 'lead-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+  // 3) Pixel SubmitApplication — sinal de intenção, NÃO conta como Lead.
+  //    O evento "Lead" só dispara no obrigado.html (quando a marcação se confirma).
   if (typeof fbq === 'function'){
-    fbq('track', 'Lead', {
+    fbq('track', 'SubmitApplication', {
       content_name: 'Simulador Previsibilidade Imobiliária',
-      content_category: '4 Improvements',
+      content_category: cluster,
       value: maturityScore,
       currency: 'EUR'
-    }, { eventID: eventId });
+    });
   }
 
   // 4) Redirect com delay para o pixel ter tempo de enviar

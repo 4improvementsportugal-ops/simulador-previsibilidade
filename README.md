@@ -70,9 +70,24 @@ git push -u origin main
 }
 ```
 
+## Estratégia de tracking (Meta Pixel)
+
+A escada de intenção está separada por evento — o **`Lead` só dispara no `obrigado.html`** (booking confirmado), para que o Meta otimize por marcações reais e não por meras submissões de formulário.
+
+| Página | Evento Meta | Evento GA4 | Quando |
+|---|---|---|---|
+| `index.html` | `PageView` | `page_view` | Ao carregar |
+| `index.html` | `SubmitApplication` | — | No submit do funil (intenção, não é Lead) |
+| `resultado.html` | `PageView` + `ViewContent` | `page_view` | Ao carregar |
+| `resultado.html` | `VSLCompleted` (custom) | `vsl_completed` | Quando o vídeo termina |
+| `resultado.html` | `Schedule` | `schedule` | Ao clicar "Confirmar sessão estratégica" |
+| `obrigado.html` | `PageView` + **`Lead`** | `page_view` + **`generate_lead`** | **Quando a marcação se confirma · evento de optimização** |
+
+**No Meta Ads Manager:** configurar o `Lead` como evento de conversão. Assim o algoritmo procura pessoas com perfil semelhante a quem **chega ao obrigado** — não a quem apenas preenche o formulário.
+
 ## Stack
 
 - HTML + CSS + JS vanilla (sem dependências)
 - Google Fonts (Space Grotesk + Inter + JetBrains Mono)
-- Google Drive embed para o VSL
+- YouTube IFrame Player API (VSL gating)
 - Mobile-first, responsive até 1024px+

@@ -526,22 +526,27 @@ function buildGoogleCalendarUrl(){
 document.getElementById('calendarBtn').href = buildGoogleCalendarUrl();
 
 // ===== 4) Eventos finais de tracking =====
+// ESTE é o momento que conta como Lead real (booking confirmado).
+// O index.html só dispara SubmitApplication (intenção); o Lead "verdadeiro"
+// só conta aqui, com eventID para deduplicação caso uses CAPI server-side.
 try {
   if (typeof fbq === 'function'){
-    fbq('track', 'CompleteRegistration', {
-      content_name: 'Sessão Estratégica Confirmada',
+    var eventId = 'lead-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
+    fbq('track', 'Lead', {
+      content_name: 'Sessão Estratégica Marcada',
       content_category: dados ? dados.cluster : null,
       value: dados ? dados.score : 0,
       currency: 'EUR'
-    });
+    }, { eventID: eventId });
   }
 } catch(e){}
 try {
   if (typeof gtag === 'function'){
-    gtag('event', 'sign_up', {
+    gtag('event', 'generate_lead', {
       event_category: 'simulator',
       page_path: '/obrigado',
-      cluster: dados ? dados.cluster : null
+      cluster: dados ? dados.cluster : null,
+      value: dados ? dados.score : 0
     });
   }
 } catch(e){}
