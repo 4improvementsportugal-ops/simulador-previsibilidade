@@ -540,6 +540,45 @@ a{color:inherit;text-decoration:none}
 }
 .video-wrapper.playing .video-vsl-time{display:block}
 
+/* Speed control bar (abaixo do vídeo) */
+.vsl-speed-bar{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  margin-bottom:12px;
+  padding:8px 12px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.vsl-speed-label{
+  font-family:var(--font-mono);
+  font-size:10.5px;color:var(--text-dim);
+  letter-spacing:0.6px;text-transform:uppercase;
+  margin-right:4px;
+}
+.vsl-speed-btn{
+  font-family:var(--font-mono);
+  font-size:11.5px;font-weight:600;
+  color:var(--text-muted);
+  padding:5px 10px;border-radius:6px;
+  background:transparent;
+  border:1px solid transparent;
+  transition:all 0.15s ease;
+  min-height:28px;
+  cursor:pointer;
+}
+.vsl-speed-btn:hover{
+  color:var(--cyan);
+  background:rgba(34,211,238,0.08);
+  border-color:rgba(34,211,238,0.25);
+}
+.vsl-speed-btn.active{
+  color:#06091F;
+  background:var(--grad-primary);
+  font-weight:700;
+  border-color:transparent;
+  box-shadow:0 4px 12px var(--cyan-glow);
+}
+
 /* Unlock toast */
 .unlock-toast{
   position:fixed;top:14px;left:50%;
@@ -649,6 +688,13 @@ a{color:inherit;text-decoration:none}
           </div>
           <span class="badge-urgency">Importante</span>
         </div>
+      </div>
+      <div class="vsl-speed-bar" id="vslSpeedBar" aria-label="Velocidade do vídeo">
+        <span class="vsl-speed-label">Velocidade</span>
+        <button type="button" class="vsl-speed-btn active" data-rate="1">1x</button>
+        <button type="button" class="vsl-speed-btn" data-rate="1.25">1.25x</button>
+        <button type="button" class="vsl-speed-btn" data-rate="1.5">1.5x</button>
+        <button type="button" class="vsl-speed-btn" data-rate="2">2x</button>
       </div>
       <div class="video-caption">
         <div class="founder-avatar">PF
@@ -1069,6 +1115,18 @@ function isUnlocked(){
   const diag = $('#diag-locked-wrap');
   return !!(diag && diag.classList.contains('unlocked'));
 }
+
+// ===== Controlo de velocidade do VSL =====
+$$('.vsl-speed-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    const rate = parseFloat(btn.dataset.rate);
+    if (ytPlayer && typeof ytPlayer.setPlaybackRate === 'function'){
+      try { ytPlayer.setPlaybackRate(rate); } catch(err){ console.warn(err); }
+    }
+    $$('.vsl-speed-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  });
+});
 
 function unlockContent(){
   const diag = $('#diag-locked-wrap');
