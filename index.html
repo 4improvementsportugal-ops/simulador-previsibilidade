@@ -621,19 +621,41 @@ h2.step-q{
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
       <div class="step-line"><span class="left">Dados de contacto · 3 de 3</span><span class="right">Sem spam</span></div>
       <h2 class="step-q">Qual é o seu telemóvel?</h2>
-      <p class="step-sub">Um estratega vai ligar-lhe para discutir o diagnóstico.</p>
+      <p class="step-sub">Vamos enviar um código por SMS para confirmar que o número é real. Um estratega vai contactá-lo com o resultado.</p>
       <div class="input-group">
         <label for="input-telefone">Telemóvel</label>
         <input type="tel" id="input-telefone" placeholder="9XX XXX XXX" autocomplete="tel" inputmode="numeric">
         <div class="input-error" id="error-telefone">Indique um telemóvel português válido (9 dígitos, começa por 9).</div>
       </div>
       <button class="btn-cta" id="submitBtn">
-        Ver o meu diagnóstico
+        Enviar código de verificação
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
       </button>
       <div class="privacy-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Os seus dados estão seguros. Não partilhamos com terceiros.
+      </div>
+    </div>
+
+    <!-- Passo 9 — Verificação OTP -->
+    <div class="step" id="step-9" data-field="otp">
+      <div class="eyebrow">Verificação</div>
+      <div class="progress-inline"><div class="progress-inline-fill"></div></div>
+      <div class="step-line"><span class="left">Confirme o seu número</span><span class="right">100% seguro</span></div>
+      <h2 class="step-q">Insira o código que recebeu por SMS</h2>
+      <p class="step-sub">Enviámos um código de 6 dígitos para <strong id="otp-phone-display">o seu número</strong>.</p>
+      <div class="input-group">
+        <label for="input-otp">Código de verificação</label>
+        <input type="text" id="input-otp" placeholder="••••••" inputmode="numeric" maxlength="6" autocomplete="one-time-code" style="letter-spacing:0.5em;text-align:center;font-size:22px;font-family:var(--font-mono);font-weight:600">
+        <div class="input-error" id="error-otp">Código inválido. Verifique e tente de novo.</div>
+      </div>
+      <button class="btn-cta" id="verifyBtn">
+        Confirmar e ver diagnóstico
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <div class="privacy-note" style="justify-content:space-between;gap:12px">
+        <a href="#" id="resend-otp" style="color:var(--cyan);font-weight:600">Reenviar código</a>
+        <a href="#" id="change-phone" style="color:var(--text-dim)">Alterar número</a>
       </div>
     </div>
 
@@ -653,7 +675,51 @@ h2.step-q{
   </a>
 </div>
 
+<!-- Container invisível do reCAPTCHA (necessário para o Firebase Phone Auth) -->
+<div id="recaptcha-container"></div>
+
+<!-- Firebase SDK (compat) para verificação de telemóvel por SMS -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
 <script>
+/* ============================================================
+   FIREBASE — Verificação de telemóvel por SMS (OTP)
+   ------------------------------------------------------------
+   COMO ATIVAR (instruções completas que o Claude enviou):
+   1. console.firebase.google.com -> criar projeto
+   2. Authentication -> Sign-in method -> ativar "Phone"
+   3. Authentication -> Settings -> Authorized domains ->
+      adicionar: 4improvementsportugal-ops.github.io
+   4. Project settings -> Your apps -> Web -> copiar o firebaseConfig
+   5. Colar esse objeto aqui em baixo (substituir os [...])
+
+   Enquanto a config estiver com os [...] o OTP fica DESLIGADO
+   (o site funciona normal, sem bloquear ninguém).
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: '[FIREBASE_API_KEY]',
+  authDomain: '[FIREBASE_AUTH_DOMAIN]',
+  projectId: '[FIREBASE_PROJECT_ID]',
+  appId: '[FIREBASE_APP_ID]'
+};
+
+// OTP só ativa quando a config real estiver colada (sem os [...])
+const OTP_ENABLED = !FIREBASE_CONFIG.apiKey.includes('[') &&
+                    typeof firebase !== 'undefined';
+
+let fbAuth = null;
+let recaptchaVerifier = null;
+let otpConfirmation = null;
+
+if (OTP_ENABLED){
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fbAuth = firebase.auth();
+    fbAuth.languageCode = 'pt';
+  } catch(e){ console.warn('[Firebase] init falhou:', e); }
+}
+
 const WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/lwdT8imgib43lDC9X1SC/webhook-trigger/6kZS8vcwprpSbH3o4rP4';
 const TOTAL_QUALI = 5;
 const TOTAL_STEPS = 8;
@@ -704,7 +770,7 @@ const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 function updateProgress(){
-  const pct = (currentStep / TOTAL_STEPS) * 100;
+  const pct = Math.min(100, (currentStep / TOTAL_STEPS) * 100);
   $$('.progress-inline-fill').forEach(el => el.style.width = pct + '%');
 }
 function hideAllSteps(){
@@ -802,7 +868,8 @@ $$('input').forEach(input => {
     if (!stepEl) return;
     const stepNum = parseInt(stepEl.id.split('-')[1], 10);
     if (stepNum === 6 && input.id === 'input-nome'){ $('#input-empresa').focus(); return; }
-    if (stepNum === 8) submitForm();
+    if (stepNum === 8) sendOtp();
+    else if (stepNum === 9) verifyOtp();
     else if (validateInputStep(stepNum)) showStep(stepNum + 1);
   });
 });
@@ -844,7 +911,101 @@ function clearError(inputId, errId){
   $('#' + errId).classList.remove('visible');
 }
 
-$('#submitBtn').addEventListener('click', submitForm);
+$('#submitBtn').addEventListener('click', sendOtp);
+$('#verifyBtn').addEventListener('click', verifyOtp);
+$('#resend-otp').addEventListener('click', (e) => { e.preventDefault(); sendOtp(true); });
+$('#change-phone').addEventListener('click', (e) => { e.preventDefault(); showStep(8); });
+
+/* ============================================================
+   OTP — envio e verificação do código por SMS
+   ============================================================ */
+function sendOtp(isResend){
+  if (!validateInputStep(8)) return;
+
+  // Se o Firebase não estiver configurado, salta o OTP (não bloqueia leads
+  // enquanto a verificação não está montada). Vai direto ao diagnóstico.
+  if (!OTP_ENABLED || !fbAuth){
+    submitForm();
+    return;
+  }
+
+  const btn = $('#submitBtn');
+  if (!isResend){
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:3px;margin:0;box-shadow:none"></span> A enviar código…';
+  }
+
+  try {
+    // (Re)cria o reCAPTCHA invisível
+    if (!recaptchaVerifier){
+      recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+        size: 'invisible'
+      });
+    }
+    fbAuth.signInWithPhoneNumber(formData.telefone, recaptchaVerifier)
+      .then((confirmationResult) => {
+        otpConfirmation = confirmationResult;
+        // Mostra o número formatado no ecrã de código
+        $('#otp-phone-display').textContent = formData.telefone;
+        btn.disabled = false;
+        btn.innerHTML = 'Enviar código de verificação <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+        if (!isResend) showStep(9);
+        else flashResend();
+      })
+      .catch((err) => {
+        console.error('[OTP] erro ao enviar:', err);
+        btn.disabled = false;
+        btn.innerHTML = 'Enviar código de verificação <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+        markError('input-telefone','error-telefone');
+        $('#error-telefone').textContent = 'Não conseguimos enviar o código. Verifique o número e tente novamente.';
+        // Reset do reCAPTCHA para permitir nova tentativa
+        try { if (recaptchaVerifier){ recaptchaVerifier.clear(); recaptchaVerifier = null; } } catch(e){}
+      });
+  } catch(err){
+    console.error('[OTP] exceção:', err);
+    btn.disabled = false;
+    submitForm(); // fail-open em caso de falha de infraestrutura
+  }
+}
+
+function flashResend(){
+  const link = $('#resend-otp');
+  const original = link.textContent;
+  link.textContent = '✓ Código reenviado';
+  link.style.color = 'var(--success)';
+  setTimeout(() => { link.textContent = original; link.style.color = 'var(--cyan)'; }, 3000);
+}
+
+function verifyOtp(){
+  const code = $('#input-otp').value.replace(/\D/g,'');
+  if (code.length !== 6){
+    markError('input-otp','error-otp');
+    $('#error-otp').textContent = 'O código tem 6 dígitos.';
+    return;
+  }
+  if (!otpConfirmation){
+    markError('input-otp','error-otp');
+    $('#error-otp').textContent = 'Sessão expirada. Reenvie o código.';
+    return;
+  }
+  const btn = $('#verifyBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:3px;margin:0;box-shadow:none"></span> A verificar…';
+
+  otpConfirmation.confirm(code)
+    .then(() => {
+      // Número confirmado — guarda flag e segue para o diagnóstico
+      formData.telefone_verificado = true;
+      submitForm();
+    })
+    .catch((err) => {
+      console.error('[OTP] código inválido:', err);
+      btn.disabled = false;
+      btn.innerHTML = 'Confirmar e ver diagnóstico <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+      markError('input-otp','error-otp');
+      $('#error-otp').textContent = 'Código inválido. Verifique e tente de novo.';
+    });
+}
 
 function enviarWebhook(payload){
   if (!WEBHOOK_URL || WEBHOOK_URL.includes('[WEBHOOK')){
@@ -897,6 +1058,7 @@ function submitForm(){
     empresa: formData.empresa,
     email: formData.email,
     telemovel: formData.telefone,
+    telefone_verificado: formData.telefone_verificado === true,
     perfil: mapLabel('perfil', formData.perfil),
     perfil_slug: formData.perfil,
     estado_operacao: mapLabel('estado_operacao', formData.estado_operacao),
