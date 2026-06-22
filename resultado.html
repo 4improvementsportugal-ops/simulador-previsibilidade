@@ -1128,16 +1128,19 @@ function startVSL(){
   setTimeout(function(){ if (!isUnlocked()) unlockContent(); }, FALLBACK_MAX_MS);
 }
 
+let vslMaxWatched = 0; // segundo máximo já visto — impede saltar à frente
+
 function initYtPlayer(){
   ytPlayer = new YT.Player('ytPlayer', {
     videoId: YT_VIDEO_ID,
     playerVars: {
       autoplay: 1,        // autoplay com som (clique do utilizador conta como interação)
-      controls: 1,        // controlos do YouTube (pausar, volume, fullscreen)
+      controls: 0,        // ESCONDE a barra de progresso — impede saltar para o fim
       rel: 0,             // sem vídeos relacionados no fim
       modestbranding: 1,  // logo YouTube mínimo
       playsinline: 1,     // crítico para iOS — não força fullscreen
-      fs: 1,              // permite fullscreen
+      fs: 0,              // sem botão de fullscreen (evita controlos nativos)
+      disablekb: 1,       // desativa teclado (setas para saltar)
       iv_load_policy: 3   // esconde annotations
     },
     events: {
@@ -1162,9 +1165,19 @@ function startProgressLoop(){
     let cur = 0, dur = 0;
     try { cur = ytPlayer.getCurrentTime() || 0; dur = ytPlayer.getDuration() || 0; } catch(err){}
     if (!dur) return;
-    const pct = Math.min(100, (cur / dur) * 100);
+
+    // ANTI-SKIP: se a pessoa saltar para a frente (além do já visto + 2s
+    // de margem), voltamos para o ponto máximo realmente assistido.
+    if (cur > vslMaxWatched + 2){
+      try { ytPlayer.seekTo(vslMaxWatched, true); } catch(err){}
+      cur = vslMaxWatched;
+    } else if (cur > vslMaxWatched){
+      vslMaxWatched = cur;
+    }
+
+    const pct = Math.min(100, (vslMaxWatched / dur) * 100);
     v.style.setProperty('--vsl-pct', pct + '%');
-    const remaining = Math.max(0, dur - cur);
+    const remaining = Math.max(0, dur - vslMaxWatched);
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
     if (timeEl) timeEl.textContent = mins + ':' + String(secs).padStart(2,'0');

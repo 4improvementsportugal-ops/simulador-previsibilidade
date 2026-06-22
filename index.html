@@ -625,7 +625,7 @@ h2.step-q{
       <div class="input-group">
         <label for="input-telefone">Telemóvel</label>
         <input type="tel" id="input-telefone" placeholder="9XX XXX XXX" autocomplete="tel" inputmode="numeric">
-        <div class="input-error" id="error-telefone">Por favor escreva um número válido.</div>
+        <div class="input-error" id="error-telefone">Indique um telemóvel português válido (9 dígitos, começa por 9).</div>
       </div>
       <button class="btn-cta" id="submitBtn">
         Ver o meu diagnóstico
@@ -822,9 +822,15 @@ function validateInputStep(step){
     formData.email = v; clearError('input-email','error-email'); return true;
   }
   if (step === 8){
-    const v = $('#input-telefone').value.replace(/\s+/g,'');
-    if (!/^\+?\d{9,15}$/.test(v)){ markError('input-telefone','error-telefone'); return false; }
-    formData.telefone = v; clearError('input-telefone','error-telefone'); return true;
+    // Limpa espaços, hífens, parênteses e prefixos internacionais
+    let v = $('#input-telefone').value.replace(/[\s\-().]/g,'');
+    v = v.replace(/^(\+351|00351|351)/, '');
+    // Telemóvel PT: 9 dígitos, começa por 9, segundo dígito 1/2/3/6 (91/92/93/96)
+    const formatoValido = /^9[1236]\d{7}$/.test(v);
+    // Rejeita sequências obviamente falsas (9 dígitos todos iguais, ex: 911111111 -> 9 + 8 iguais)
+    const sequenciaFalsa = /^9(\d)\1{7}$/.test(v);
+    if (!formatoValido || sequenciaFalsa){ markError('input-telefone','error-telefone'); return false; }
+    formData.telefone = '+351' + v; clearError('input-telefone','error-telefone'); return true;
   }
   return true;
 }
