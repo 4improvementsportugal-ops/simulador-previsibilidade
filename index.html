@@ -479,8 +479,26 @@ h2.step-q{
 /* Fechado de vez */
 .float-video.closed{display:none}
 
-@media (min-width:768px){
-  .float-video{right:20px;bottom:20px;width:300px}
+/* Desktop: vídeo fixo a ocupar ~metade do ecrã, formulário na outra metade */
+@media (min-width:1024px){
+  body.fv-docked{padding-right:46vw}
+  .float-video{
+    right:2vw;
+    top:50%;bottom:auto;
+    transform:translateY(-50%);
+    width:42vw;
+    max-width:820px;
+  }
+  .fv-header{cursor:default}
+  .fv-header:active{cursor:default}
+  .fv-play{width:64px;height:64px}
+  .fv-play svg{width:24px;height:24px}
+  /* Minimizado ou fechado no desktop: volta a pill no canto, formulário recentra */
+  .float-video.min{
+    top:auto;bottom:20px;
+    transform:none;
+    width:auto;max-width:260px;
+  }
 }
 
 /* Mobile fixed CTAs */
@@ -1074,6 +1092,21 @@ updateProgress();
   if (!fv || !handle || !body) return;
 
   let playing = false;
+  const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
+
+  // Desktop: painel fixo em metade do ecrã -> empurra o formulário para a esquerda.
+  // Só aplica se o painel estiver aberto e não minimizado.
+  function syncDock(){
+    const docked = isDesktop() && !fv.classList.contains('closed') && !fv.classList.contains('min');
+    document.body.classList.toggle('fv-docked', docked);
+    // Se voltou ao modo docked, limpa posição de arrasto herdada do mobile
+    if (docked){
+      fv.style.left = ''; fv.style.top = '';
+      fv.style.right = ''; fv.style.bottom = '';
+    }
+  }
+  syncDock();
+  window.addEventListener('resize', syncDock);
 
   // Play: injeta o iframe com som (clique conta como interação do utilizador)
   body.addEventListener('click', function(){
@@ -1090,20 +1123,24 @@ updateProgress();
   document.getElementById('fvMin').addEventListener('click', function(e){
     e.stopPropagation();
     fv.classList.toggle('min');
+    syncDock();
   });
 
   // Fechar
   document.getElementById('fvClose').addEventListener('click', function(e){
     e.stopPropagation();
     fv.classList.add('closed');
+    syncDock();
   });
 
   // Arrastar pela barra do título (rato + toque, via pointer events)
+  // No desktop o painel é fixo; o arrasto só funciona em mobile/tablet.
   let dragging = false, startX = 0, startY = 0, origX = 0, origY = 0;
 
   handle.addEventListener('pointerdown', function(e){
-    // Não arrasta se o clique foi num botão
+    // Não arrasta se o clique foi num botão, nem no modo desktop (painel fixo)
     if (e.target.closest('.fv-btn')) return;
+    if (isDesktop()) return;
     dragging = true;
     const rect = fv.getBoundingClientRect();
     // Converte de right/bottom para left/top no primeiro arrasto
