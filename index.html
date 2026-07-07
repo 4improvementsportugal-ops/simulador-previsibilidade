@@ -143,6 +143,17 @@ a{color:inherit;text-decoration:none}
   animation:pulse 2s ease-in-out infinite;
 }
 
+/* Barra de marca a toda a largura (fora do contentor central) */
+.brand-wrap{
+  position:relative;z-index:1;
+  padding:14px 14px 0;
+}
+.brand-wrap .brand-shell{margin-bottom:0}
+@media (min-width:640px){.brand-wrap{padding:20px 20px 0}}
+@media (min-width:1024px){.brand-wrap{padding:24px 28px 0}}
+/* No modo docked o body ganha padding-right; a barra anula-o para ir até ao fim */
+body.fv-docked .brand-wrap{margin-right:-46vw}
+
 /* Card shell */
 .card-shell{
   background:linear-gradient(180deg, var(--shell-dark) 0%, var(--page-bg-2) 100%);
@@ -549,8 +560,8 @@ h2.step-q{
 </head>
 <body>
 
-<div class="shell-wrap">
-
+<!-- Barra de marca a toda a largura do ecrã -->
+<div class="brand-wrap">
   <header class="brand-shell">
     <div class="brand-left">
       <img class="brand-logo" src="https://assets.cdn.filesafe.space/lwdT8imgib43lDC9X1SC/media/69c1cdbe3e56b9aeea9f211b.png" alt="4 Improvements">
@@ -564,6 +575,9 @@ h2.step-q{
       Diagnóstico gratuito
     </div>
   </header>
+</div>
+
+<div class="shell-wrap">
 
   <!-- HERO -->
   <main class="card-shell" id="hero-shell">
@@ -768,9 +782,6 @@ h2.step-q{
     <span class="fv-actions">
       <button type="button" class="fv-btn" id="fvMin" aria-label="Minimizar vídeo" title="Minimizar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-      <button type="button" class="fv-btn" id="fvClose" aria-label="Fechar vídeo" title="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
       </button>
     </span>
   </div>
@@ -1118,7 +1129,7 @@ updateProgress();
   // Desktop: painel fixo em metade do ecrã -> empurra o formulário para a esquerda.
   // Só aplica se o painel estiver aberto e não minimizado.
   function syncDock(){
-    const docked = isDesktop() && !fv.classList.contains('closed') && !fv.classList.contains('min');
+    const docked = isDesktop() && !fv.classList.contains('min');
     document.body.classList.toggle('fv-docked', docked);
     // Se voltou ao modo docked, limpa posição de arrasto herdada do mobile
     if (docked){
@@ -1129,26 +1140,46 @@ updateProgress();
   syncDock();
   window.addEventListener('resize', syncDock);
 
-  // Play: injeta o player com som (clique conta como interação do utilizador)
+  // Play: player cativo — sem controlos do YouTube, sem link para o YouTube.
+  // Um escudo transparente por cima do iframe bloqueia qualquer clique no
+  // player nativo; o clique passa a alternar apenas play/pausa.
   body.addEventListener('click', function(){
     if (playing) return;
     playing = true;
-    body.innerHTML = '<div id="fvPlayer" style="position:absolute;inset:0;width:100%;height:100%"></div>';
+    body.innerHTML =
+      '<div id="fvPlayer" style="position:absolute;inset:0;width:100%;height:100%"></div>' +
+      '<div id="fvShield" style="position:absolute;inset:0;z-index:2;cursor:pointer"></div>' +
+      '<span class="fv-play" id="fvPausedIcon" style="display:none;z-index:3"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#fff;margin-left:2px"><polygon points="6 4 20 12 6 20 6 4"/></svg></span>';
     body.style.cursor = 'default';
     (function tryInit(){
       if (fvApiReady && window.YT && window.YT.Player){
         fvPlayer = new YT.Player('fvPlayer', {
           videoId: FV_VIDEO_ID,
-          playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1 },
+          playerVars: { autoplay:1, controls:0, rel:0, modestbranding:1, playsinline:1, fs:0, disablekb:1, iv_load_policy:3 },
           events: {
             onReady: function(e){ try { e.target.playVideo(); } catch(err){} },
             onStateChange: function(e){
+              const icon = document.getElementById('fvPausedIcon');
               if (e.data === YT.PlayerState.ENDED){
                 fvEnded = true;
+                if (icon) icon.style.display = 'none';
                 try { if (typeof fbq === 'function') fbq('trackCustom', 'VSLCompleted'); } catch(err){}
+              } else if (e.data === YT.PlayerState.PAUSED){
+                if (icon) icon.style.display = 'flex';
+              } else if (e.data === YT.PlayerState.PLAYING){
+                if (icon) icon.style.display = 'none';
               }
             }
           }
+        });
+        // Escudo: clique alterna play/pausa (nunca chega ao player nativo)
+        document.getElementById('fvShield').addEventListener('click', function(ev){
+          ev.stopPropagation();
+          if (!fvPlayer || typeof fvPlayer.getPlayerState !== 'function') return;
+          try {
+            if (fvPlayer.getPlayerState() === YT.PlayerState.PLAYING) fvPlayer.pauseVideo();
+            else fvPlayer.playVideo();
+          } catch(err){}
         });
       } else {
         setTimeout(tryInit, 100);
@@ -1161,13 +1192,6 @@ updateProgress();
   document.getElementById('fvMin').addEventListener('click', function(e){
     e.stopPropagation();
     fv.classList.toggle('min');
-    syncDock();
-  });
-
-  // Fechar
-  document.getElementById('fvClose').addEventListener('click', function(e){
-    e.stopPropagation();
-    fv.classList.add('closed');
     syncDock();
   });
 

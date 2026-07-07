@@ -136,6 +136,15 @@ a{color:inherit;text-decoration:none}
   background:var(--success);
 }
 
+/* Barra de marca a toda a largura (fora do contentor central) */
+.brand-wrap{
+  position:relative;z-index:1;
+  padding:14px 14px 0;
+}
+.brand-wrap .brand-shell{margin-bottom:0}
+@media (min-width:640px){.brand-wrap{padding:20px 20px 0}}
+@media (min-width:1024px){.brand-wrap{padding:24px 28px 0}}
+
 /* Card */
 .card-shell{
   background:linear-gradient(180deg, var(--shell-dark) 0%, var(--page-bg-2) 100%);
@@ -347,8 +356,8 @@ h1.ty-h1 .accent{
 </head>
 <body>
 
-<div class="shell-wrap">
-
+<!-- Barra de marca a toda a largura do ecrã -->
+<div class="brand-wrap">
   <header class="brand-shell">
     <div class="brand-left">
       <img class="brand-logo" src="https://assets.cdn.filesafe.space/lwdT8imgib43lDC9X1SC/media/69c1cdbe3e56b9aeea9f211b.png" alt="4 Improvements">
@@ -362,6 +371,9 @@ h1.ty-h1 .accent{
       Sessão confirmada
     </div>
   </header>
+</div>
+
+<div class="shell-wrap">
 
   <main class="card-shell">
 

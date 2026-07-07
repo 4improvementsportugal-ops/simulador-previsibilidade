@@ -141,6 +141,15 @@ a{color:inherit;text-decoration:none}
   animation:pulse 2s ease-in-out infinite;
 }
 
+/* Barra de marca a toda a largura (fora do contentor central) */
+.brand-wrap{
+  position:relative;z-index:1;
+  padding:14px 14px 0;
+}
+.brand-wrap .brand-shell{margin-bottom:0}
+@media (min-width:640px){.brand-wrap{padding:20px 20px 0}}
+@media (min-width:1024px){.brand-wrap{padding:24px 28px 0}}
+
 .card-shell{
   background:linear-gradient(180deg, var(--shell-dark) 0%, var(--page-bg-2) 100%);
   border:1px solid var(--border-strong);
@@ -517,6 +526,8 @@ a{color:inherit;text-decoration:none}
 
 /* Video VSL playing state */
 .video-wrapper.playing .play-button{display:none}
+/* Em pausa (via escudo), volta a mostrar o triângulo de play por cima */
+.video-wrapper.playing.paused .play-button{display:flex;pointer-events:none;z-index:3}
 .video-wrapper.playing .video-overlay{display:none}
 .video-wrapper.playing::after{
   content:'';position:absolute;left:0;bottom:0;height:5px;
@@ -663,8 +674,8 @@ a{color:inherit;text-decoration:none}
 </head>
 <body>
 
-<div class="shell-wrap">
-
+<!-- Barra de marca a toda a largura do ecrã -->
+<div class="brand-wrap">
   <header class="brand-shell">
     <div class="brand-left">
       <img class="brand-logo" src="https://assets.cdn.filesafe.space/lwdT8imgib43lDC9X1SC/media/69c1cdbe3e56b9aeea9f211b.png" alt="4 Improvements">
@@ -678,6 +689,9 @@ a{color:inherit;text-decoration:none}
       Diagnóstico pronto
     </div>
   </header>
+</div>
+
+<div class="shell-wrap">
 
   <main class="card-shell" id="ty-shell">
     <div class="ty-eyebrow">
@@ -1103,9 +1117,11 @@ function startVSL(){
   const v = $('#videoPlaceholder');
   v.classList.add('playing');
 
-  // Cria o div onde o YT.Player vai injetar o iframe
+  // Cria o player + escudo transparente que bloqueia cliques no YouTube
+  // (a pessoa não pode ir para o youtube.com; o clique alterna play/pausa)
   v.insertAdjacentHTML('afterbegin',
-    '<div id="ytPlayer" style="position:absolute;inset:0;width:100%;height:100%;z-index:1"></div>'
+    '<div id="ytPlayer" style="position:absolute;inset:0;width:100%;height:100%;z-index:1"></div>' +
+    '<div id="ytShield" style="position:absolute;inset:0;z-index:2;cursor:pointer"></div>'
   );
 
   // Espera pela API e inicializa
@@ -1123,12 +1139,13 @@ function initYtPlayer(){
     videoId: YT_VIDEO_ID,
     playerVars: {
       autoplay: 1,        // autoplay com som (clique do utilizador conta como interação)
-      controls: 1,        // controlos completos: o vídeo é opcional
+      controls: 0,        // sem controlos do YouTube (player cativo)
       start: VSL_RESUME_AT, // retoma do ponto onde a pessoa ia no simulador
       rel: 0,             // sem vídeos relacionados no fim
       modestbranding: 1,  // logo YouTube mínimo
       playsinline: 1,     // crítico para iOS — não força fullscreen
-      fs: 1,              // permite fullscreen
+      fs: 0,              // sem fullscreen nativo
+      disablekb: 1,       // sem atalhos de teclado do player
       iv_load_policy: 3   // esconde annotations
     },
     events: {
@@ -1137,12 +1154,29 @@ function initYtPlayer(){
         startProgressLoop();
       },
       onStateChange: function(e){
+        const wrap = $('#videoPlaceholder');
         if (e.data === YT.PlayerState.ENDED){
+          if (wrap) wrap.classList.remove('paused');
           try { if (typeof fbq === 'function') fbq('trackCustom', 'VSLCompleted'); } catch(err){}
           try { if (typeof gtag === 'function') gtag('event', 'vsl_completed', { event_category: 'simulator' }); } catch(err){}
+        } else if (e.data === YT.PlayerState.PAUSED){
+          if (wrap) wrap.classList.add('paused');
+        } else if (e.data === YT.PlayerState.PLAYING){
+          if (wrap) wrap.classList.remove('paused');
         }
       }
     }
+  });
+
+  // Escudo: clique alterna play/pausa, nunca chega ao player nativo
+  const shield = $('#ytShield');
+  if (shield) shield.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    if (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function') return;
+    try {
+      if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+      else ytPlayer.playVideo();
+    } catch(err){}
   });
 }
 
