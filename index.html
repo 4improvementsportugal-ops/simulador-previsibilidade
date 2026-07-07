@@ -394,6 +394,95 @@ h2.step-q{
 .loading-step .ls-icon svg{width:9px;height:9px;display:none}
 .loading-step.active .ls-icon svg{display:block}
 
+/* ========================================================
+   VÍDEO FLUTUANTE — mensagem do CEO (opcional, arrastável)
+   ======================================================== */
+.float-video{
+  position:fixed;
+  right:12px;bottom:76px;
+  width:min(280px, 62vw);
+  z-index:990;
+  background:var(--inset-dark);
+  border:1px solid rgba(34,211,238,0.35);
+  border-radius:14px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(34,211,238,0.12);
+  overflow:hidden;
+  touch-action:none;
+  transition:opacity 0.3s ease;
+}
+.fv-header{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 10px;
+  background:linear-gradient(135deg, rgba(34,211,238,0.14), rgba(99,102,241,0.10));
+  border-bottom:1px solid var(--border);
+  cursor:grab;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.fv-header:active{cursor:grabbing}
+.fv-title{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--font-mono);
+  font-size:10px;font-weight:600;letter-spacing:0.8px;
+  color:var(--cyan);text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  pointer-events:none;
+}
+.fv-title .fv-dot{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0;
+  background:var(--cyan);
+  box-shadow:0 0 8px var(--cyan);
+  animation:pulse 2s infinite;
+}
+.fv-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.fv-btn{
+  width:24px;height:24px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-muted);
+  background:rgba(255,255,255,0.05);
+  transition:all 0.15s ease;
+  cursor:pointer;
+  padding:0;text-align:center;
+}
+.fv-btn:hover{color:var(--text);background:rgba(255,255,255,0.12)}
+.fv-btn svg{width:13px;height:13px}
+.fv-body{
+  position:relative;
+  aspect-ratio:16/9;
+  background:#000;
+  cursor:pointer;
+}
+.fv-body img{
+  position:absolute;inset:0;
+  width:100%;height:100%;object-fit:cover;
+  opacity:0.85;
+}
+.fv-play{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%;
+  background:var(--grad-primary);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px var(--indigo-glow);
+  transition:transform 0.2s ease;
+  pointer-events:none;
+}
+.fv-body:hover .fv-play{transform:translate(-50%,-50%) scale(1.1)}
+.fv-play svg{width:16px;height:16px;color:#fff;margin-left:2px}
+.fv-body iframe{
+  position:absolute;inset:0;
+  width:100%;height:100%;border:0;
+}
+/* Estado minimizado: só a barra do título */
+.float-video.min .fv-body{display:none}
+.float-video.min{width:auto;max-width:230px}
+/* Fechado de vez */
+.float-video.closed{display:none}
+
+@media (min-width:768px){
+  .float-video{right:20px;bottom:20px;width:300px}
+}
+
 /* Mobile fixed CTAs */
 .mobile-ctas{
   display:none;position:fixed;bottom:0;left:0;right:0;
@@ -489,7 +578,7 @@ h2.step-q{
     <div class="step active" id="step-1" data-field="perfil">
       <div class="eyebrow">Simulador Gratuito</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
-      <div class="step-line"><span class="left">Pergunta 1 de 5</span><span class="right">Menos de 2 minutos</span></div>
+      <div class="step-line"><span class="left">Pergunta 1 de 6</span><span class="right">Menos de 2 minutos</span></div>
       <h2 class="step-q">Qual é o seu perfil no imobiliário?</h2>
       <p class="step-sub">Vamos calibrar o diagnóstico para a sua realidade.</p>
       <div class="options-list">
@@ -503,7 +592,7 @@ h2.step-q{
     <div class="step" id="step-2" data-field="estado_operacao">
       <div class="eyebrow">Simulador Gratuito</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
-      <div class="step-line"><span class="left">Pergunta 2 de 5</span><span class="right">Seja honesto</span></div>
+      <div class="step-line"><span class="left">Pergunta 2 de 6</span><span class="right">Seja honesto</span></div>
       <h2 class="step-q">Qual destas frases descreve melhor o estado da sua operação hoje?</h2>
       <p class="step-sub">Escolha a que mais lhe soa familiar — não há respostas certas ou erradas.</p>
       <div class="options-list">
@@ -518,7 +607,7 @@ h2.step-q{
     <div class="step" id="step-3" data-field="velocidade_resposta">
       <div class="eyebrow">Simulador Gratuito</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
-      <div class="step-line"><span class="left">Pergunta 3 de 5</span><span class="right">Velocidade</span></div>
+      <div class="step-line"><span class="left">Pergunta 3 de 6</span><span class="right">Velocidade</span></div>
       <h2 class="step-q">Quanto tempo demora, em média, a responder a um novo contacto?</h2>
       <p class="step-sub">Pense num lead que entrou agora pelo Idealista, Meta Ads ou WhatsApp.</p>
       <div class="options-list">
@@ -533,7 +622,7 @@ h2.step-q{
     <div class="step" id="step-4" data-field="ia_base_dados">
       <div class="eyebrow">Simulador Gratuito</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
-      <div class="step-line"><span class="left">Pergunta 4 de 5</span><span class="right">IA &amp; Base de Dados</span></div>
+      <div class="step-line"><span class="left">Pergunta 4 de 6</span><span class="right">IA &amp; Base de Dados</span></div>
       <h2 class="step-q">Usa IA ou cadências automáticas para responder, fazer follow-up e reativar a sua base de dados antiga?</h2>
       <p class="step-sub">A base de dados é o ativo mais subaproveitado do mercado imobiliário português.</p>
       <div class="options-list">
@@ -545,10 +634,23 @@ h2.step-q{
       </div>
     </div>
 
-    <div class="step" id="step-5" data-field="objetivo_90d">
+    <div class="step" id="step-5" data-field="faturacao_anual">
       <div class="eyebrow">Simulador Gratuito</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
-      <div class="step-line"><span class="left">Pergunta 5 de 5</span><span class="right">Última pergunta</span></div>
+      <div class="step-line"><span class="left">Pergunta 5 de 6</span><span class="right">Dimensão do negócio</span></div>
+      <h2 class="step-q">Qual é a faturação anual do seu negócio?</h2>
+      <p class="step-sub">Para calibrarmos o diagnóstico à dimensão real da sua operação. Resposta confidencial.</p>
+      <div class="options-list">
+        <button class="option-card" data-value="80k_100k" data-score="0">Entre 80 mil e 100 mil euros</button>
+        <button class="option-card" data-value="100k_300k" data-score="0">Entre 100 mil e 300 mil euros</button>
+        <button class="option-card" data-value="mais_300k" data-score="0">Acima de 300 mil euros</button>
+      </div>
+    </div>
+
+    <div class="step" id="step-6" data-field="objetivo_90d">
+      <div class="eyebrow">Simulador Gratuito</div>
+      <div class="progress-inline"><div class="progress-inline-fill"></div></div>
+      <div class="step-line"><span class="left">Pergunta 6 de 6</span><span class="right">Última pergunta</span></div>
       <h2 class="step-q">Se pudesse resolver UMA coisa nos próximos 90 dias, qual seria?</h2>
       <p class="step-sub">A resposta vai personalizar o seu diagnóstico e o plano de ação.</p>
       <div class="options-list">
@@ -583,7 +685,7 @@ h2.step-q{
       </div>
     </div>
 
-    <div class="step" id="step-6" data-field="contact_1">
+    <div class="step" id="step-7" data-field="contact_1">
       <div class="eyebrow">Quase Lá</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
       <div class="step-line"><span class="left">Dados de contacto · 1 de 3</span><span class="right">100% seguro</span></div>
@@ -599,10 +701,10 @@ h2.step-q{
         <input type="text" id="input-empresa" placeholder="Ex: RE/MAX, Century 21 ou nome próprio" autocomplete="organization">
         <div class="input-error" id="error-empresa">Por favor indique a empresa.</div>
       </div>
-      <button class="btn-cta" data-next="7">Continuar <span class="enter-hint">↵ Enter</span></button>
+      <button class="btn-cta" data-next="8">Continuar <span class="enter-hint">↵ Enter</span></button>
     </div>
 
-    <div class="step" id="step-7" data-field="email">
+    <div class="step" id="step-8" data-field="email">
       <div class="eyebrow">Quase Lá</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
       <div class="step-line"><span class="left">Dados de contacto · 2 de 3</span><span class="right">100% seguro</span></div>
@@ -613,10 +715,10 @@ h2.step-q{
         <input type="email" id="input-email" placeholder="nome@empresa.pt" autocomplete="email">
         <div class="input-error" id="error-email">Por favor escreva um email válido.</div>
       </div>
-      <button class="btn-cta" data-next="8">Continuar <span class="enter-hint">↵ Enter</span></button>
+      <button class="btn-cta" data-next="9">Continuar <span class="enter-hint">↵ Enter</span></button>
     </div>
 
-    <div class="step" id="step-8" data-field="telefone">
+    <div class="step" id="step-9" data-field="telefone">
       <div class="eyebrow">Último Passo</div>
       <div class="progress-inline"><div class="progress-inline-fill"></div></div>
       <div class="step-line"><span class="left">Dados de contacto · 3 de 3</span><span class="right">Sem spam</span></div>
@@ -641,6 +743,27 @@ h2.step-q{
 
 </div>
 
+<!-- Vídeo flutuante: mensagem do CEO (opcional, arrastável, minimizável) -->
+<div class="float-video" id="floatVideo">
+  <div class="fv-header" id="fvHandle">
+    <span class="fv-title"><span class="fv-dot"></span> Mensagem do CEO · 4 Improvements</span>
+    <span class="fv-actions">
+      <button type="button" class="fv-btn" id="fvMin" aria-label="Minimizar vídeo" title="Minimizar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button type="button" class="fv-btn" id="fvClose" aria-label="Fechar vídeo" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+      </button>
+    </span>
+  </div>
+  <div class="fv-body" id="fvBody">
+    <img src="https://i.ytimg.com/vi/Y7diCaqebrY/hqdefault.jpg" alt="Mensagem do CEO da 4 Improvements">
+    <span class="fv-play">
+      <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+    </span>
+  </div>
+</div>
+
 <!-- Mobile CTAs -->
 <div class="mobile-ctas">
   <a class="mobile-cta whatsapp" href="https://wa.me/351963934488" target="_blank" rel="noopener">
@@ -655,8 +778,8 @@ h2.step-q{
 
 <script>
 const WEBHOOK_URL = 'https://services.leadconnectorhq.com/hooks/lwdT8imgib43lDC9X1SC/webhook-trigger/6kZS8vcwprpSbH3o4rP4';
-const TOTAL_QUALI = 5;
-const TOTAL_STEPS = 8;
+const TOTAL_QUALI = 6;
+const TOTAL_STEPS = 9;
 const STORAGE_KEY = '4i_simulador';
 
 const formData = {};
@@ -667,7 +790,7 @@ const transitions = {
   1: { title: 'Perfeito.', text: 'Vamos calibrar o diagnóstico para o seu perfil específico no imobiliário.' },
   2: { title: 'Obrigado pela honestidade.', text: 'Esta resposta é a base do diagnóstico. Já temos uma direção clara.' },
   3: { title: 'Velocidade conta.', text: 'No imobiliário, leads sem resposta em <5 minutos têm 80% de probabilidade de ir à concorrência.' },
-  4: { title: 'Quase lá.', text: 'Falta apenas a pergunta mais importante — a que vai personalizar o seu plano de ação.' }
+  5: { title: 'Quase lá.', text: 'Falta apenas a pergunta mais importante, a que vai personalizar o seu plano de ação.' }
 };
 
 const clusterDefs = {
@@ -689,7 +812,8 @@ function mapLabel(key, val){
     perfil: { consultor:'Consultor', team_leader:'Team Leader', diretor:'Diretor Comercial', broker:'Broker / Agência' },
     estado_operacao: { reativo:'Reativo — sem processo', perco_leads:'Perco leads por falta de follow-up', improviso:'Faturo bem mas vivo no improviso', estrutura_sem_auto:'Tenho estrutura mas falta automação', madura:'Operação madura — quero escalar' },
     velocidade_resposta: { ate_30s:'Menos de 30 segundos', ate_5min:'Poucos minutos', ate_1h:'Até 1 hora', horas:'Horas', dias:'Dia seguinte ou mais' },
-    ia_base_dados: { ia_completo:'IA completa + cadências automáticas', automacoes_simples:'Automações no CRM, sem IA', manual_ocasional:'Recuperação manual ocasional', bd_parada:'BD parada há meses ou anos', nada:'Sem IA nem trabalho na BD' }
+    ia_base_dados: { ia_completo:'IA completa + cadências automáticas', automacoes_simples:'Automações no CRM, sem IA', manual_ocasional:'Recuperação manual ocasional', bd_parada:'BD parada há meses ou anos', nada:'Sem IA nem trabalho na BD' },
+    faturacao_anual: { '80k_100k':'Entre 80 mil e 100 mil euros', '100k_300k':'Entre 100 mil e 300 mil euros', 'mais_300k':'Acima de 300 mil euros' }
   };
   return (m[key] && m[key][val]) || val || '';
 }
@@ -801,14 +925,14 @@ $$('input').forEach(input => {
     const stepEl = input.closest('.step');
     if (!stepEl) return;
     const stepNum = parseInt(stepEl.id.split('-')[1], 10);
-    if (stepNum === 6 && input.id === 'input-nome'){ $('#input-empresa').focus(); return; }
-    if (stepNum === 8) submitForm();
+    if (stepNum === 7 && input.id === 'input-nome'){ $('#input-empresa').focus(); return; }
+    if (stepNum === 9) submitForm();
     else if (validateInputStep(stepNum)) showStep(stepNum + 1);
   });
 });
 
 function validateInputStep(step){
-  if (step === 6){
+  if (step === 7){
     let ok = true;
     const n = $('#input-nome').value.trim();
     const emp = $('#input-empresa').value.trim();
@@ -816,12 +940,12 @@ function validateInputStep(step){
     if (emp.length < 2){ markError('input-empresa','error-empresa'); ok = false; } else { formData.empresa = emp; clearError('input-empresa','error-empresa'); }
     return ok;
   }
-  if (step === 7){
+  if (step === 8){
     const v = $('#input-email').value.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ markError('input-email','error-email'); return false; }
     formData.email = v; clearError('input-email','error-email'); return true;
   }
-  if (step === 8){
+  if (step === 9){
     // Limpa espaços, hífens, parênteses e prefixos internacionais
     let v = $('#input-telefone').value.replace(/[\s\-().]/g,'');
     v = v.replace(/^(\+351|00351|351)/, '');
@@ -866,7 +990,7 @@ function enviarWebhook(payload){
 }
 
 function submitForm(){
-  if (!validateInputStep(8)) return;
+  if (!validateInputStep(9)) return;
   const btn = $('#submitBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:3px;margin:0;box-shadow:none"></span> A enviar…';
@@ -902,6 +1026,8 @@ function submitForm(){
     estado_operacao: mapLabel('estado_operacao', formData.estado_operacao),
     velocidade_resposta: mapLabel('velocidade_resposta', formData.velocidade_resposta),
     ia_base_dados: mapLabel('ia_base_dados', formData.ia_base_dados),
+    faturacao_anual: mapLabel('faturacao_anual', formData.faturacao_anual),
+    faturacao_anual_slug: formData.faturacao_anual,
     foco_90d: focoLabel,
     foco_90d_slug: formData.objetivo_90d,
     score_maturidade: maturityScore,
@@ -934,6 +1060,81 @@ function submitForm(){
 }
 
 updateProgress();
+
+/* ============================================================
+   VÍDEO FLUTUANTE — mensagem do CEO
+   Opcional: a pessoa pode ver, minimizar, fechar ou arrastar.
+   Não bloqueia o preenchimento do simulador.
+   ============================================================ */
+(function(){
+  const FV_VIDEO_ID = 'Y7diCaqebrY';
+  const fv = document.getElementById('floatVideo');
+  const handle = document.getElementById('fvHandle');
+  const body = document.getElementById('fvBody');
+  if (!fv || !handle || !body) return;
+
+  let playing = false;
+
+  // Play: injeta o iframe com som (clique conta como interação do utilizador)
+  body.addEventListener('click', function(){
+    if (playing) return;
+    playing = true;
+    body.innerHTML = '<iframe src="https://www.youtube.com/embed/' + FV_VIDEO_ID +
+      '?autoplay=1&rel=0&modestbranding=1&playsinline=1" ' +
+      'allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+    body.style.cursor = 'default';
+    try { if (typeof fbq === 'function') fbq('trackCustom', 'VSLPlayFloating'); } catch(e){}
+  });
+
+  // Minimizar / restaurar
+  document.getElementById('fvMin').addEventListener('click', function(e){
+    e.stopPropagation();
+    fv.classList.toggle('min');
+  });
+
+  // Fechar
+  document.getElementById('fvClose').addEventListener('click', function(e){
+    e.stopPropagation();
+    fv.classList.add('closed');
+  });
+
+  // Arrastar pela barra do título (rato + toque, via pointer events)
+  let dragging = false, startX = 0, startY = 0, origX = 0, origY = 0;
+
+  handle.addEventListener('pointerdown', function(e){
+    // Não arrasta se o clique foi num botão
+    if (e.target.closest('.fv-btn')) return;
+    dragging = true;
+    const rect = fv.getBoundingClientRect();
+    // Converte de right/bottom para left/top no primeiro arrasto
+    fv.style.left = rect.left + 'px';
+    fv.style.top = rect.top + 'px';
+    fv.style.right = 'auto';
+    fv.style.bottom = 'auto';
+    startX = e.clientX; startY = e.clientY;
+    origX = rect.left; origY = rect.top;
+    handle.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  handle.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    const rect = fv.getBoundingClientRect();
+    let nx = origX + (e.clientX - startX);
+    let ny = origY + (e.clientY - startY);
+    // Mantém dentro do ecrã
+    nx = Math.max(4, Math.min(nx, window.innerWidth - rect.width - 4));
+    ny = Math.max(4, Math.min(ny, window.innerHeight - rect.height - 4));
+    fv.style.left = nx + 'px';
+    fv.style.top = ny + 'px';
+  });
+
+  handle.addEventListener('pointerup', function(e){
+    dragging = false;
+    try { handle.releasePointerCapture(e.pointerId); } catch(err){}
+  });
+  handle.addEventListener('pointercancel', function(){ dragging = false; });
+})();
 </script>
 
 </body>
