@@ -1026,6 +1026,7 @@ function submitForm(){
       cluster: cluster,
       cluster_label: clusterLabel,
       foco_label: focoLabel,
+      vsl: (typeof window.__fvState === 'function' ? window.__fvState() : null),
       timestamp: new Date().toISOString()
     }));
   } catch(e){ /* sessionStorage indisponível — segue na mesma */ }
@@ -1092,7 +1093,27 @@ updateProgress();
   if (!fv || !handle || !body) return;
 
   let playing = false;
+  let fvPlayer = null;
+  let fvEnded = false;
+  let fvApiReady = false;
   const isDesktop = () => window.matchMedia('(min-width:1024px)').matches;
+
+  // Carrega a YouTube IFrame API (necessária para saber em que segundo
+  // a pessoa ia, e retomar o vídeo na página de resultado sem repetir).
+  (function loadYouTubeAPI(){
+    if (window.YT && window.YT.Player){ fvApiReady = true; return; }
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  })();
+  window.onYouTubeIframeAPIReady = function(){ fvApiReady = true; };
+
+  // Estado do vídeo, lido pelo submitForm para gravar no sessionStorage.
+  window.__fvState = function(){
+    let time = 0;
+    try { if (fvPlayer && typeof fvPlayer.getCurrentTime === 'function') time = Math.floor(fvPlayer.getCurrentTime() || 0); } catch(e){}
+    return { started: playing, ended: fvEnded, time: time };
+  };
 
   // Desktop: painel fixo em metade do ecrã -> empurra o formulário para a esquerda.
   // Só aplica se o painel estiver aberto e não minimizado.
@@ -1108,14 +1129,31 @@ updateProgress();
   syncDock();
   window.addEventListener('resize', syncDock);
 
-  // Play: injeta o iframe com som (clique conta como interação do utilizador)
+  // Play: injeta o player com som (clique conta como interação do utilizador)
   body.addEventListener('click', function(){
     if (playing) return;
     playing = true;
-    body.innerHTML = '<iframe src="https://www.youtube.com/embed/' + FV_VIDEO_ID +
-      '?autoplay=1&rel=0&modestbranding=1&playsinline=1" ' +
-      'allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>';
+    body.innerHTML = '<div id="fvPlayer" style="position:absolute;inset:0;width:100%;height:100%"></div>';
     body.style.cursor = 'default';
+    (function tryInit(){
+      if (fvApiReady && window.YT && window.YT.Player){
+        fvPlayer = new YT.Player('fvPlayer', {
+          videoId: FV_VIDEO_ID,
+          playerVars: { autoplay:1, rel:0, modestbranding:1, playsinline:1 },
+          events: {
+            onReady: function(e){ try { e.target.playVideo(); } catch(err){} },
+            onStateChange: function(e){
+              if (e.data === YT.PlayerState.ENDED){
+                fvEnded = true;
+                try { if (typeof fbq === 'function') fbq('trackCustom', 'VSLCompleted'); } catch(err){}
+              }
+            }
+          }
+        });
+      } else {
+        setTimeout(tryInit, 100);
+      }
+    })();
     try { if (typeof fbq === 'function') fbq('trackCustom', 'VSLPlayFloating'); } catch(e){}
   });
 

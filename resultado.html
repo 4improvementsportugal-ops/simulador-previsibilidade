@@ -687,14 +687,14 @@ a{color:inherit;text-decoration:none}
     <h1 class="ty-headline">
       <span id="ty-nome">O seu</span> diagnóstico <span class="accent">está pronto.</span>
     </h1>
-    <p class="ty-sub">Veja a mensagem do <strong>Pedro Ferreira</strong>, CEO da 4 Improvements, explore o seu resultado abaixo e marque já a sua sessão estratégica gratuita.</p>
+    <p class="ty-sub" id="ty-sub">Explore o seu resultado abaixo e marque já a sua sessão estratégica gratuita.</p>
 
-    <!-- VSL VIDEO — primeiro -->
-    <div class="ty-block ty-vsl-block">
+    <!-- VSL VIDEO — só aparece se a pessoa ficou a meio no simulador -->
+    <div class="ty-block ty-vsl-block hidden" id="vsl-block">
       <div class="ty-block-header">
-        <span class="vsl-badge">▶ Mensagem do CEO</span>
-        <h3>Mensagem do Pedro Ferreira</h3>
-        <p>CEO da 4 Improvements · Mensagem curta antes do seu diagnóstico.</p>
+        <span class="vsl-badge">▶ Continuar a ver</span>
+        <h3>Continue a mensagem do Pedro Ferreira</h3>
+        <p>CEO da 4 Improvements · Retome de onde parou.</p>
       </div>
       <div class="video-wrapper" id="videoPlaceholder">
         <span class="video-playing-indicator"><span class="live-dot"></span> A reproduzir</span>
@@ -1066,9 +1066,24 @@ if ($('#confirm-session-btn')) $('#confirm-session-btn').addEventListener('click
   setTimeout(irParaObrigado, 500);
 });
 
-// ========== 6) VSL — YouTube IFrame Player API (visualização opcional) ==========
-// O vídeo já não bloqueia o diagnóstico: a pessoa pode ver, saltar ou ignorar.
+// ========== 6) VSL — retoma opcional ==========
+// O bloco de vídeo só aparece se a pessoa começou a ver no simulador e não
+// terminou. Nesse caso retoma do segundo onde ia. Se nunca viu ou já acabou,
+// o bloco fica escondido (ninguém vê o vídeo duas vezes).
 const YT_VIDEO_ID = 'Y7diCaqebrY'; // VSL Pedro Ferreira — canal 4Improvements
+const vslState = (dados && dados.vsl) ? dados.vsl : null;
+const VSL_RESUME_AT = (vslState && vslState.started && !vslState.ended)
+  ? Math.max(0, (vslState.time || 0) - 3)  // recua 3s para dar contexto
+  : 0;
+const VSL_SHOW = !!(vslState && vslState.started && !vslState.ended);
+
+if (VSL_SHOW){
+  const blk = $('#vsl-block');
+  if (blk) blk.classList.remove('hidden');
+  const sub = $('#ty-sub');
+  if (sub) sub.innerHTML = 'Continue a mensagem do <strong>Pedro Ferreira</strong> de onde parou, explore o seu resultado e marque já a sua sessão estratégica gratuita.';
+}
+
 let vslStarted = false;
 let ytPlayer = null;
 let ytApiReady = false;
@@ -1109,6 +1124,7 @@ function initYtPlayer(){
     playerVars: {
       autoplay: 1,        // autoplay com som (clique do utilizador conta como interação)
       controls: 1,        // controlos completos: o vídeo é opcional
+      start: VSL_RESUME_AT, // retoma do ponto onde a pessoa ia no simulador
       rel: 0,             // sem vídeos relacionados no fim
       modestbranding: 1,  // logo YouTube mínimo
       playsinline: 1,     // crítico para iOS — não força fullscreen
