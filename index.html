@@ -779,11 +779,6 @@ h2.step-q{
 <div class="float-video" id="floatVideo">
   <div class="fv-header" id="fvHandle">
     <span class="fv-title"><span class="fv-dot"></span> Mensagem do CEO · 4 Improvements</span>
-    <span class="fv-actions">
-      <button type="button" class="fv-btn" id="fvMin" aria-label="Minimizar vídeo" title="Minimizar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-    </span>
   </div>
   <div class="fv-body" id="fvBody">
     <img src="https://i.ytimg.com/vi/Y7diCaqebrY/hqdefault.jpg" alt="Mensagem do CEO da 4 Improvements">
@@ -1186,13 +1181,6 @@ updateProgress();
       }
     })();
     try { if (typeof fbq === 'function') fbq('trackCustom', 'VSLPlayFloating'); } catch(e){}
-  });
-
-  // Minimizar / restaurar
-  document.getElementById('fvMin').addEventListener('click', function(e){
-    e.stopPropagation();
-    fv.classList.toggle('min');
-    syncDock();
   });
 
   // Arrastar pela barra do título (rato + toque, via pointer events)
